@@ -26,7 +26,7 @@ from collections import defaultdict
 # CONFIGURATION GLOBALE
 # ============================================================================
 
-TARGET_LINES = 8000  # Objectif: 5K-8K lignes uniques
+TARGET_LINES = 25000  # Objectif: 20K-25K lignes uniques
 RANDOM_SEED = 42
 random.seed(RANDOM_SEED)
 
@@ -145,6 +145,62 @@ CATEGORIES = [
     "server_whitelist",
     "server_ban",
     "server_save",
+    "command_block_impulse",
+    "command_block_repeat",
+    "command_block_chain",
+    "command_block_conditional",
+    "command_block_always_active",
+    "command_block_redstone_controlled",
+    "command_block_combinations",
+    "cb_timer_clock",
+    "cb_detector_rail",
+    "cb_pressure_plate",
+    "cb_button_lever",
+    "cb_observer_chain",
+    "cb_fill_clock",
+    "cb_entity_detection",
+    "cb_block_detection",
+    "cb_item_detection",
+    "cb_player_proximity",
+    "cb_scoreboard_trigger",
+    "cb_multi_step_sequence",
+    "cb_state_machine",
+    "cb_event_system",
+    "cb_broadcast_system",
+    "cb_teleporter_network",
+    "cb_shop_system",
+    "cb_quest_system",
+    "cb_dialogue_system",
+    "cb_cutscene_system",
+    "cb_minigame_controller",
+    "cb_arena_manager",
+    "cb_wave_spawner",
+    "cb_loot_generator",
+    "cb_randomizer",
+    "cb_music_system",
+    "cb_particle_effects",
+    "cb_lighting_system",
+    "cb_door_lock",
+    "cb_password_system",
+    "cb_elevator",
+    "cb_hidden_door",
+    "cb_trap_mechanism",
+    "cb_shooting_range",
+    "cb_parkour_checkpoint",
+    "cb_race_timer",
+    "cb_leaderboard_display",
+    "cb_team_selector",
+    "cb_kit_selector",
+    "cb_inventory_manager",
+    "cb_currency_system",
+    "cb_stat_tracker",
+    "cb_achievement_system",
+    "cb_day_night_cycle",
+    "cb_weather_control",
+    "cb_mob_spawner_custom",
+    "cb_boss_mechanic",
+    "cb_puzzle_controller",
+    "cb_maze_generator",
     "game_architecture_general",
     "minigame_spleef",
     "minigame_parkour",
@@ -764,7 +820,7 @@ def generate_basic_command_example(cmd_name: str, cmd_data: Dict) -> TrainingExa
     """Génère un exemple pour une commande de base."""
     
     edition = random.choice(["java", "bedrock", "both"])
-    version = random.choice(VERSIONS_MAJOR) if edition == "java" else random.choice(BEDROCK_VERSIONS)
+    version = random.choice([v[0] for v in JAVA_VERSIONS]) if edition == "java" else random.choice([v[0] for v in BEDROCK_VERSIONS])
     
     # Question utilisateur
     question_templates = [
@@ -1343,6 +1399,477 @@ def generate_optimization_example() -> TrainingExample:
 def generate_version_comparison_example() -> TrainingExample:
     """Génère un exemple comparant plusieurs versions."""
     
+    commands_with_changes = [
+        ("/execute", "1.13", "Refonte complète : execute as/at/positioned/run"),
+        ("/give", "1.20.5", "Passage NBT → Components"),
+        ("/summon", "1.20.5", "NBT remplacé par components"),
+        ("/data", "1.17", "Nouveau merge/get/modify"),
+        ("/item", "1.17", "Ajouté pour modifier items"),
+        ("/attribute", "1.16.2", "Nouvelle commande dédiée")
+    ]
+    
+    cmd, version, change = random.choice(commands_with_changes)
+    
+    user_question = f"Quelle est la différence de {cmd} entre les versions ?"
+    
+    response = f"## Évolution de {cmd}\\n\\n"
+    response += f"**Changement majeur en {version} :** {change}\\n\\n"
+    
+    if cmd == "/execute":
+        response += "```mcfunction\\n"
+        response += "# 1.12 et avant\\n"
+        response += "execute @a ~ ~ ~ give @s diamond\\n"
+        response += "\\n"
+        response += "# 1.13+\\n"
+        response += "execute as @a run give @s diamond\\n"
+        response += "\\n"
+        response += "# 1.19.4+ (améliorations)\\n"
+        response += "execute as @a positioned ^ ^ ^1.5 if block ~ ~-1 ~ air run give @s feather\\n"
+        response += "```\\n"
+    elif cmd == "/give":
+        response += "```mcfunction\\n"
+        response += "# 1.13-1.20.4 (NBT)\\n"
+        response += "/give @p minecraft:diamond_sword{Enchantments:[{id:sharpness,lvl:5}],display:{Name:'\\\"Épée Légendaire\\\"'}}\\n"
+        response += "\\n"
+        response += "# 1.20.5+ (Components)\\n"
+        response += "/give @p minecraft:diamond_sword[enchantments={levels:{minecraft:sharpness:5}},custom_name='{\\\"text\\\":\\\"Épée Légendaire\\\"}']\\n"
+        response += "```\\n"
+    elif cmd == "/summon":
+        response += "```mcfunction\\n"
+        response += "# 1.13-1.20.4 (NBT)\\n"
+        response += "/summon armor_stand ~ ~ ~ {CustomName:'\\\"Marker\\\"',Invisible:1b,NoGravity:1b}\\n"
+        response += "\\n"
+        response += "# 1.20.5+ (Components)\\n"
+        response += "/summon armor_stand ~ ~ ~ {custom_data:{custom_name:'{\\\"text\\\":\\\"Marker\\\"}',invisible:1b,no_gravity:1b}}\\n"
+        response += "```\\n"
+    
+    metadata = {
+        "edition": "java",
+        "min_version": "1.13",
+        "max_version": None,
+        "category": "version_migration",
+        "command_focus": cmd,
+        "breaking_changes": version,
+        "best_practices": ["Always check version before using commands", "Use datapack pack_format to enforce version"],
+        "tags": ["version", "migration", cmd.replace("/", ""), "breaking-change"]
+    }
+    
+    messages = [
+        {"role": "system", "content": generate_system_message()},
+        {"role": "user", "content": user_question},
+        {"role": "assistant", "content": response}
+    ]
+    
+    return TrainingExample(messages=messages, metadata=metadata)
+
+
+def generate_command_block_example(cb_type: str) -> TrainingExample:
+    """Génère un exemple sur les Command Blocks et leurs combinaisons."""
+    
+    cb_info = {
+        "impulse": {
+            "name": "Impulse (Orange)",
+            "desc": "S'exécute UNE fois à la réception d'un signal redstone",
+            "use_cases": ["Déclencheur unique", "Initialisation", "Réponse à événement"],
+            "example": "Un bouton → /give @p diamond"
+        },
+        "repeat": {
+            "name": "Repeat (Violet)",
+            "desc": "S'exécute en boucle (20 fois/seconde par défaut) tant qu'alimenté",
+            "use_cases": ["Boucle de jeu", "Détection continue", "Timer", "Effets permanents"],
+            "example": "Toujours actif → /effect give @a[tag=playing] speed 2 1 true"
+        },
+        "chain": {
+            "name": "Chain (Vert)",
+            "desc": "S'exécute SI le bloc précédent a réussi (flèche directionnelle)",
+            "use_cases": ["Séquences conditionnelles", "Chaînes de logique", "Exécution ordonnée"],
+            "example": "Après un repeat → /scoreboard players add global ticks 1"
+        },
+        "conditional": {
+            "name": "Conditionnel",
+            "desc": "Ne s'exécute que si le bloc précédent a RENCONTRÉ UN SUCCÈS",
+            "use_cases": ["Tests conditionnels", "Validation d'état", "Branchement logique"],
+            "example": "Si testfor réussit → /tellraw @a \\\"Succès!\\\""
+        },
+        "unconditional": {
+            "name": "Inconditionnel",
+            "desc": "S'exécute toujours quand activé (défaut)",
+            "use_cases": ["Exécution systématique", "Chaînes simples"],
+            "example": "→ /summon creeper ~ ~ ~"
+        },
+        "always_active": {
+            "name": "Toujours actif",
+            "desc": "Pas besoin de signal redstone externe (pour Repeat/Chain)",
+            "use_cases": ["Boucles autonomes", "Systèmes auto-alimentés"],
+            "example": "Repeat: Toujours actif → function tick:main"
+        },
+        "redstone_controlled": {
+            "name": "Contrôlé par Redstone",
+            "desc": "Nécessite un signal redstone externe",
+            "use_cases": ["Déclencheurs manuels", "Synchronisation externe"],
+            "example": "Levier → Impulse → /tp @p spawn"
+        }
+    }
+    
+    info = cb_info.get(cb_type, cb_info["impulse"])
+    
+    user_questions = [
+        f"Explique le command block {info['name']}",
+        f"Comment utiliser un {info['name']} ?",
+        f"À quoi sert un command block {info['name'].split()[0]} ?",
+        f"Détaille le fonctionnement des {info['name']}",
+        f"Quand utiliser un {info['name']} ?"
+    ]
+    
+    response = f"## {info['name']}\\n\\n"
+    response += f"**Description :** {info['desc']}\\n\\n"
+    response += f"**Cas d'usage :** {', '.join(info['use_cases'])}\\n\\n"
+    response += f"**Exemple concret :** {info['example']}\\n\\n"
+    
+    if cb_type == "impulse":
+        response += "```mcfunction\\n"
+        response += "# Configuration: Impulse, Redstone, Inconditionnel\\n"
+        response += "# Déclencheur: Bouton ou Plaque de pression\\n"
+        response += "/give @p[start_level=1] minecraft:netherite_sword\\n"
+        response += "/title @p title \\\"Arme obtenue!\\\"\\n"
+        response += "```\\n"
+    elif cb_type == "repeat":
+        response += "```mcfunction\\n"
+        response += "# Configuration: Repeat, Always Active, Unconditional\\n"
+        response += "# Boucle principale du jeu (tick.mcfunction équivalent)\\n"
+        response += "execute as @a[tag=playing] at @s run function game:player_tick\\n"
+        response += "execute as @e[type=armor_stand,tag=game_marker] at @s run function game:world_tick\\n"
+        response += "scoreboard players add global timer 1\\n"
+        response += "```\\n"
+    elif cb_type == "chain":
+        response += "```mcfunction\\n"
+        response += "# Chaîne: Repeat → Chain → Chain\\n"
+        response += "# Block 1 (Repeat): scoreboard players add ticks 1\\n"
+        response += "# Block 2 (Chain): execute if score ticks matches 20 run scoreboard players add seconds 1\\n"
+        response += "# Block 3 (Chain): execute if score seconds matches 60 run scoreboard players add minutes 1\\n"
+        response += "```\\n"
+    elif cb_type == "conditional":
+        response += "```mcfunction\\n"
+        response += "# Configuration: Chain, Conditional\\n"
+        response += "# Block 1: testfor @a[scores={health=1..}]\\n"
+        response += "# Block 2 (Conditional): tellraw @a \\\"Des joueurs sont en vie!\\\"\\n"
+        response += "# Alternative moderne:\\n"
+        response += "execute if entity @a[scores={health=1..}] run tellraw @a \\\"Joueurs détectés\\\"\\n"
+        response += "```\\n"
+    
+    response += "\\n**Bonnes pratiques :**\\n"
+    response += "- Nommer vos Command Blocks avec !setblock pour débogage\\n"
+    response += "- Utiliser 'gamerule commandBlockOutput false' pour réduire le spam\\n"
+    response += "- Privilégier les Functions (.mcfunction) aux longues chaînes\\n"
+    response += "- Pour les boucles, Repeat + Always Active est plus efficace que l'horloge redstone\\n"
+    
+    metadata = {
+        "edition": "both",
+        "min_version": "1.9",
+        "max_version": None,
+        "category": f"command_block_{cb_type}",
+        "command_focus": "command_block",
+        "breaking_changes": "1.9: Ajout des Repeat et Chain blocks",
+        "best_practices": ["Use functions over long chains", "Disable output for performance", "Name your command blocks"],
+        "tags": ["command-block", cb_type, "redstone", "automation"]
+    }
+    
+    messages = [
+        {"role": "system", "content": generate_system_message()},
+        {"role": "user", "content": random.choice(user_questions)},
+        {"role": "assistant", "content": response}
+    ]
+    
+    return TrainingExample(messages=messages, metadata=metadata)
+
+
+def generate_cb_combination_example(combination_type: str) -> TrainingExample:
+    """Génère un exemple de combinaison de Command Blocks pour une tâche spécifique."""
+    
+    combinations = {
+        "timer_clock": {
+            "name": "Horloge / Timer",
+            "description": "Compte le temps écoulé en ticks, secondes, minutes",
+            "setup": [
+                "1. Repeat (Always Active, Unconditional) → Incrémente ticks",
+                "2. Chain (Conditional) → Si ticks=20, incrémente secondes",
+                "3. Chain (Conditional) → Si secondes=60, incrémente minutes",
+                "4. Chain (Conditional) → Affiche le temps si demandé"
+            ],
+            "commands": [
+                "scoreboard objectives add ticks dummy",
+                "scoreboard objectives add seconds dummy", 
+                "scoreboard objectives add minutes dummy",
+                "# Repeat block:",
+                "scoreboard players add global ticks 1",
+                "# Chain 1 (Conditional):",
+                "execute if score global ticks matches 20 run scoreboard players add global seconds 1",
+                "execute if score global ticks matches 20 run scoreboard players set global ticks 0",
+                "# Chain 2 (Conditional):",
+                "execute if score global seconds matches 60 run scoreboard players add global minutes 1",
+                "execute if score global seconds matches 60 run scoreboard players set global seconds 0",
+                "# Chain 3 (Affichage):",
+                "title @a actionbar [{\\\"text\\\":\\\"Temps: \\\",\\\"color\\\":\\\"gold\\\"},{\\\"score\\\":{\\\"name\\\":\\\"global\\\",\\\"objective\\\":\\\"minutes\\\"}},{\\\"text\\\":\\\":\\\"},{\\\"score\\\":{\\\"name\\\":\\\"global\\\",\\\"objective\\\":\\\"seconds\\\"}}]"
+            ]
+        },
+        "fill_clock": {
+            "name": "Horloge Fill (Fill Clock)",
+            "description": "Horloge ultra-rapide utilisant /fill et /testforblock",
+            "setup": [
+                "1. Impulse (Redstone) → Démarre l'horloge",
+                "2. Repeat (Always Active) → Remplit un bloc d'air",
+                "3. Chain → Teste si le bloc est air, sinon réactive"
+            ],
+            "commands": [
+                "# Configuration classique Fill Clock:",
+                "# Block A (Repeat, Always Active): fill ~ ~1 ~ ~ ~1 ~ air",
+                "# Block B (Chain, Conditional): testforblock ~ ~1 ~ air",
+                "# Block C (Chain, Conditional): fill ~ ~-1 ~ ~ ~-1 ~ redstone_block",
+                "# Note: Cette technique est OBSOLÈTE en 1.13+",
+                "# Préférer: schedule ou Repeat Always Active"
+            ]
+        },
+        "entity_detector": {
+            "name": "Détection d'Entité",
+            "description": "Détecte les entités dans une zone et déclenche des actions",
+            "setup": [
+                "1. Repeat (Always Active) → Teste présence entités",
+                "2. Chain (Conditional) → Si joueur détecté, action 1",
+                "3. Chain (Conditional) → Si mob détecté, action 2",
+                "4. Chain → Log dans scoreboard"
+            ],
+            "commands": [
+                "scoreboard objectives add detected dummy",
+                "# Repeat (Always Active):",
+                "execute if entity @a[x=100,y=64,z=100,distance=..10] run scoreboard players add @p zone_entry 1",
+                "# Chain 1 (Conditional):",
+                "execute if entity @a[x=100,y=64,z=100,distance=..5] run title @a title \\\"Zone dangereuse!\\\"",
+                "# Chain 2 (Conditional):",
+                "execute if entity @e[type=!player,type=!armor_stand,x=100,y=64,z=100,distance=..10] run summon creeper ~ ~1 ~",
+                "# Chain 3:",
+                "execute store result score global entities_detected run data get entity @e[limit=1] Health"
+            ]
+        },
+        "shop_system": {
+            "name": "Système de Boutique",
+            "description": "Permet aux joueurs d'acheter des objets avec une monnaie",
+            "setup": [
+                "1. Scoreboard: money (devise), purchases (suivi)",
+                "2. Impulse (Button) → Vérifie solde et donne objet",
+                "3. Chain (Conditional) → Si achat réussi, déduit argent",
+                "4. Chain → Message de confirmation"
+            ],
+            "commands": [
+                "scoreboard objectives add money dummy",
+                "scoreboard objectives add purchases dummy",
+                "# Button → Impulse:",
+                "execute if score @p money matches 10.. run give @p diamond 1",
+                "# Chain 1 (Conditional):",
+                "execute if score @p money matches 10.. run scoreboard players remove @p money 10",
+                "# Chain 2:",
+                "execute if score @p money matches 10.. run tellraw @p [{\\\"text\\\":\\\"Achat réussi! -10$\\\",\\\"color\\\":\\\"green\\\"}]",
+                "# Alternative avec ClickEvent (1.13+):",
+                "tellraw @p [{\\\"text\\\":\\\"[Acheter Diamant - 10$]\\\",\\\"color\\\":\\\"gold\\\",\\\"clickEvent\\\":{\\\"action\\\":\\\"run_command\\\",\\\"value\\\":\\\"/trigger shop_diamond\\\"}}]"
+            ]
+        },
+        "teleporter_network": {
+            "name": "Réseau de Téléportation",
+            "description": "Système de waypoints téléportant vers différentes zones",
+            "setup": [
+                "1. Pressure Plate → Détecte joueur",
+                "2. Impulse → Téléporte vers destination",
+                "3. Chain → Effets de téléportation",
+                "4. Chain → Cooldown système"
+            ],
+            "commands": [
+                "scoreboard objectives add tp_cooldown dummy",
+                "# Pressure Plate → Impulse:",
+                "execute if score @p tp_cooldown matches ..0 run tp @p 1000 100 1000",
+                "# Chain 1 (Conditional):",
+                "execute if score @p tp_cooldown matches ..0 run particle portal ~ ~1 ~ 1 1 1 0.5 10",
+                "# Chain 2:",
+                "execute if score @p tp_cooldown matches ..0 run playsound entity.enderman.teleport master @a ~ ~ ~ 1 1",
+                "# Chain 3:",
+                "scoreboard players set @p tp_cooldown 100",
+                "# Repeat pour cooldown:",
+                "scoreboard players remove @a[scores={tp_cooldown=1..}] tp_cooldown 1"
+            ]
+        },
+        "boss_mechanic": {
+            "name": "Mécanique de Boss",
+            "description": "Gère les phases, vie, et attaques d'un boss",
+            "setup": [
+                "1. Repeat → Vérifie vie du boss",
+                "2. Chain (Conditional) → Phase 1 (100%-70%)",
+                "3. Chain (Conditional) → Phase 2 (70%-40%)",
+                "4. Chain (Conditional) → Phase 3 (40%-0%)",
+                "5. Chain → Gère attaques périodiques"
+            ],
+            "commands": [
+                "scoreboard objectives add boss_health dummy",
+                "scoreboard objectives add boss_phase dummy",
+                "# Repeat (Always Active):",
+                "execute store result score #boss boss_health run data get entity @e[tag=boss,limit=1] Health",
+                "# Chain 1 (Conditional) - Phase 1:",
+                "execute if score #boss boss_health matches 70.. run scoreboard players set #phase boss_phase 1",
+                "# Chain 2 (Conditional) - Phase 2:",
+                "execute if score #boss boss_health matches 40..69 run scoreboard players set #phase boss_phase 2",
+                "# Chain 3 (Conditional) - Phase 3:",
+                "execute if score #boss boss_health matches ..39 run scoreboard players set #phase boss_phase 3",
+                "# Chain 4 - Attaque Phase 2:",
+                "execute if score #phase boss_phase matches 2 if score global attack_timer matches 20.. run summon fireball ~ ~5 ~ {Motion:[0.0,-0.5,0.0]}",
+                "# Chain 5:",
+                "execute if score global attack_timer matches 20.. run scoreboard players set global attack_timer 0",
+                "# Repeat pour timer:",
+                "scoreboard players add global attack_timer 1"
+            ]
+        },
+        "parkour_checkpoint": {
+            "name": "Checkpoint Parkour",
+            "description": "Système de checkpoints pour course d'obstacles",
+            "setup": [
+                "1. Pressure Plate → Enregistre checkpoint",
+                "2. Impulse → Set tag et scoreboard",
+                "3. Chain → Message personnalisé",
+                "4. Death → Teleport au dernier checkpoint"
+            ],
+            "commands": [
+                "scoreboard objectives add checkpoint dummy",
+                "# Pressure Plate → Impulse:",
+                "tag @p add cp_arena1_zone1",
+                "scoreboard players set @p checkpoint 1",
+                "# Chain 1:",
+                "title @p title [{\\\"text\\\":\\\"✓ Checkpoint 1\\\",\\\"color\\\":\\\"green\\\"}]",
+                "# Chain 2:",
+                "tellraw @p [{\\\"text\\\":\\\"Prochaine zone: Sauts de slime!\\\",\\\"color\\\":\\\"gray\\\"}]",
+                "# Système de mort (Repeat Always Active):",
+                "execute as @a[tag=playing,tag=!cp_set] at @s run tp @s ~100 ~50 ~100"
+            ]
+        },
+        "password_door": {
+            "name": "Porte à Mot de Passe",
+            "description": "Ouvre une porte secrète avec un code numérique",
+            "setup": [
+                "1. Buttons numérotés → Incrémentent code",
+                "2. Repeat → Vérifie combinaison",
+                "3. Chain (Conditional) → Si correct, ouvre porte",
+                "4. Chain → Reset après délai"
+            ],
+            "commands": [
+                "scoreboard objectives add password dummy",
+                "scoreboard objectives add input_code dummy",
+                "# Button 1 → Impulse:",
+                "scoreboard players add @p input_code 1000",
+                "# Button 2 → Impulse:",
+                "scoreboard players add @p input_code 100",
+                "# Repeat (Always Active):",
+                "execute if score @p input_code matches 1234 run setblock ~ ~-1 ~ iron_door open",
+                "# Chain 1 (Conditional):",
+                "execute if score @p input_code matches 1234 run tellraw @p [{\\\"text\\\":\\\"Accès autorisé!\\\",\\\"color\\\":\\\"green\\\"}]",
+                "# Chain 2 (Conditional):",
+                "execute if score @p input_code matches 1234 run playsound block.iron_door.open master @p ~ ~ ~",
+                "# Reset après 3 secondes (schedule ou chain temporelle):",
+                "execute if score @p input_code matches 1234 run scoreboard players set @p input_code 0"
+            ]
+        },
+        "wave_spawner": {
+            "name": "Spawner de Vagues",
+            "description": "Fait apparaître des vagues de mobs pour un minigame",
+            "setup": [
+                "1. Repeat → Compte temps entre vagues",
+                "2. Chain (Conditional) → Si timer atteint, lance vague",
+                "3. Chain → Spawne mobs selon configuration",
+                "4. Chain → Annonce vague suivante"
+            ],
+            "commands": [
+                "scoreboard objectives add wave dummy",
+                "scoreboard objectives add wave_timer dummy",
+                "scoreboard objectives add mobs_alive dummy",
+                "# Repeat (Always Active):",
+                "scoreboard players add global wave_timer 1",
+                "# Chain 1 (Conditional) - Nouvelle vague:",
+                "execute if score global wave_timer matches 600.. run scoreboard players add global wave 1",
+                "# Chain 2:",
+                "execute if score global wave_timer matches 600.. run scoreboard players set global wave_timer 0",
+                "# Chain 3 - Spawn selon vague:",
+                "execute if score global wave matches 1 run summon zombie ~ ~1 ~ {HandItems:[{id:\"iron_sword\",Count:1b},{}],ArmorItems:[{},{},{},{id:\"iron_helmet\",Count:1b}]}",
+                "# Chain 4 - Annonce:",
+                "execute if score global wave matches 1.. run title @a title [{\\\"text\\\":\\\"Vague \\\",\\\"color\\\":\\\"red\\\"},{\\\"score\\\":{\\\"name\\\":\\\"global\\\",\\\"objective\\\":\\\"wave\\\"}}]"
+            ]
+        },
+        "leaderboard_display": {
+            "name": "Classement en Temps Réel",
+            "description": "Affiche le top joueurs sur un scoreboard visible",
+            "setup": [
+                "1. Repeat → Met à jour l'affichage",
+                "2. Chain → Trie les scores",
+                "3. Chain → Affiche sur sidebar ou bossbar",
+                "4. Chain → Met à jour les positions"
+            ],
+            "commands": [
+                "scoreboard objectives add kills dummy",
+                "scoreboard objectives add deaths dummy",
+                "scoreboard objectives setsidebar display kills",
+                "# Repeat (Always Active):",
+                "scoreboard objectives setdisplay sidebar kills",
+                "# Chain - Top 3 avec tellraw:",
+                "tellraw @a [{\\\"text\\\":\\\"=== CLASSEMENT ===\\\",\\\"color\\\":\\\"gold\\\",\\\"bold\\\":true}]",
+                "execute store result score #top1 kills run scoreboard players operation #top1 kills = @a[kills_sort=highest,limit=1] kills",
+                "# Alternative avec bossbar:",
+                "bossbar add game:leaderboard \\\"Top Kills\\\"",
+                "bossbar set game:leaderboard color yellow",
+                "bossbar set game:leaderback visible true"
+            ]
+        }
+    }
+    
+    combo = combinations.get(combination_type, combinations["timer_clock"])
+    
+    user_questions = [
+        f"Comment créer un {combo['name']} avec des command blocks ?",
+        f"Explique le système {combo['name']} étape par étape",
+        f"Je veux faire un {combo['name']}, quelles commandes utiliser ?",
+        f"Architecture pour un {combo['name']} dans Minecraft",
+        f"Tutoriel complet: {combo['name']} avec command blocks"
+    ]
+    
+    response = f"## {combo['name']}\\n\\n"
+    response += f"**Description :** {combo['description']}\\n\\n"
+    response += "### Configuration des Command Blocks:\\n\\n"
+    
+    for i, step in enumerate(combo['setup'], 1):
+        response += f"{i}. {step}\\n"
+    
+    response += "\\n### Commandes:\\n\\n```mcfunction\\n"
+    for cmd in combo['commands']:
+        response += f"{cmd}\\n"
+    response += "```\\n"
+    
+    response += "\\n**Notes importantes :**\\n"
+    response += "- Adaptez les coordonnées (~ ~ ~) à votre installation\\n"
+    response += "- Utilisez `gamerule commandBlockOutput false` pour réduire le spam\\n"
+    response += "- Testez chaque bloc individuellement avant de connecter la chaîne\\n"
+    response += "- Pour les systèmes complexes, privilégiez les .mcfunctions\\n"
+    
+    metadata = {
+        "edition": "both",
+        "min_version": "1.13",
+        "max_version": None,
+        "category": f"cb_combination_{combination_type}",
+        "command_focus": "command_block_chain",
+        "breaking_changes": "Varies by system",
+        "best_practices": ["Test each block individually", "Use relative coordinates", "Consider using functions for complex systems"],
+        "tags": ["command-block", "combination", combination_type, "tutorial", "automation"]
+    }
+    
+    messages = [
+        {"role": "system", "content": generate_system_message()},
+        {"role": "user", "content": random.choice(user_questions)},
+        {"role": "assistant", "content": response}
+    ]
+    
+    return TrainingExample(messages=messages, metadata=metadata)
+    
     command = random.choice(["/give", "/summon", "/execute", "/data", "/item"])
     
     user_question = f"Quelle est la différence entre {command} en 1.12, 1.13-1.20.4 et 1.20.5+ ?"
@@ -1606,6 +2133,22 @@ def main():
     print("  - Comparaisons Java/Bedrock...")
     for _ in range(300):
         examples.append(generate_bedrock_vs_java_example())
+    
+    # 9. Command Blocks types (environ 700 exemples - 7 types x 100)
+    print("  - Command Blocks (types)...")
+    cb_types = ["impulse", "repeat", "chain", "conditional", "unconditional", "always_active", "redstone_controlled"]
+    for cb_type in cb_types:
+        for _ in range(100):
+            examples.append(generate_command_block_example(cb_type))
+    
+    # 10. Combinaisons de Command Blocks (environ 1000 exemples - 10 combinaisons x 100)
+    print("  - Combinaisons Command Blocks...")
+    cb_combinations = ["timer_clock", "fill_clock", "entity_detector", "shop_system", 
+                       "teleporter_network", "boss_mechanic", "parkour_checkpoint", 
+                       "password_door", "wave_spawner", "leaderboard_display"]
+    for combo_type in cb_combinations:
+        for _ in range(100):
+            examples.append(generate_cb_combination_example(combo_type))
     
     # Mélanger pour éviter le biais
     print("Mélange des exemples...")
