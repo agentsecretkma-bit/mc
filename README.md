@@ -1,6 +1,6 @@
 # 🧱 Minecraft Ultimate Command & Architecture Dataset (v1.0)
 
-Le dataset d'entraînement le plus complet et le plus avancé jamais constitué pour l'intelligence artificielle spécialisée dans **Minecraft**. Conçu pour le fine-tuning de LLM (Large Language Models), il transforme un modèle généraliste en un **expert technique capable de concevoir des systèmes complexes, des minigames entiers et des datapacks professionnels**.
+Le dataset d'entraînement pour l'intelligence artificielle spécialisée dans **Minecraft**. Conçu pour le fine-tuning de LLM (Large Language Models), il transforme un modèle généraliste en un **expert technique capable de concevoir des systèmes complexes, des minigames entiers et des datapacks professionnels**.
 
 ---
 
@@ -154,6 +154,3 @@ Pour obtenir les meilleurs résultats, utilisez toujours un **System Prompt** pr
 ## 📄 Licence
 Ce dataset est fourni à des fins éducatives et de recherche pour l'entraînement de modèles d'IA open-source. Les commandes Minecraft sont la propriété intellectuelle de Mojang Studios/Microsoft.
 
----
-
-**Créé avec passion pour la communauté Minecraft et l'IA.** 🧱🤖
