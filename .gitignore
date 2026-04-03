@@ -1,4 +1,4 @@
-```
+```gitignore
 # Compiled and build artifacts
 *.pyc
 __pycache__/
@@ -6,11 +6,6 @@ __pycache__/
 # Dependencies
 .venv/
 venv/
-node_modules/
-dist/
-build/
-target/
-.gradle/
 .mypy_cache/
 .pytest_cache/
 
@@ -28,16 +23,17 @@ target/
 .vscode/
 .idea/
 
-# OS specific
-.DS_Store
-Thumbs.db
-
-# Coverage
+# Coverage reports
+.coverage
 coverage/
 htmlcov/
-.coverage
 
-# Compressed files
+# Distribution files
+dist/
+build/
+target/
+
+# Compression and archives
 *.zip
 *.gz
 *.tar
@@ -56,4 +52,8 @@ htmlcov/
 *.Z
 *.lz
 *.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```
